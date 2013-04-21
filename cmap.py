@@ -1,25 +1,21 @@
 # gcc _cmap.c -o _cmap.so -fPIC -shared -O2 -std=c99 -Wall -Werror && python cmap.py
 
-from ctypes import CDLL, c_uint32, c_int32, POINTER, ARRAY, c_long, c_size_t, pointer
+from ctypes import CDLL, c_uint32, c_int32, POINTER, ARRAY, c_int, c_size_t, pointer
 import numpy
+
 
 cmap = CDLL("./_cmap.so")
 cmap.burnHeatMap.argtypes = (
     c_int32, c_int32, POINTER(c_int32),
     c_size_t, POINTER(c_int32), POINTER(c_int32))
+cmap.burnHeatMap.restype = c_int
 
-cmap.burnHeatMap.restype = None
 
 def getHeatMap(gridMap, goals):
-    # heatMap = numpy.ndarray(
-    #     gridMap.shape,
-    #     dtype=numpy.int32,
-    #     order='C')
+    # Explicitly copy gridMap to a shape appropriate for C.
+    heatMap = gridMap.reshape(gridMap.shape, order="C")[:,:]
 
-    # heatMap[:] = gridMap[:]
-
-    heatMap = (1 * gridMap).reshape(gridMap.shape, order="C")
-
+    # Copy the goals list into a format that's convenient for ctypes passing.
     goals_type = c_int32 * len(goals)
     goals_xs = goals_type()
     goals_ys = goals_type()
@@ -29,10 +25,15 @@ def getHeatMap(gridMap, goals):
 
     xMax = heatMap.shape[0]
     yMax = heatMap.shape[1]
+    # I'm almost not sure that this isn't illegal.
     ptr = heatMap.ctypes.data_as(POINTER(c_int32))
 
-    cmap.burnHeatMap(xMax, yMax, ptr, len(goals), goals_xs, goals_ys)
+    fail = cmap.burnHeatMap(yMax, xMax, ptr, len(goals), goals_xs, goals_ys)
+    if fail != 0:
+        raise MemoryError("allocation error in _cmap on line %d." % fail)
+
     return heatMap
+
 
 def test():
     from time import time
