@@ -35,8 +35,9 @@ def getHeatMap(gridMap, goals):
         goals_xs[i] = x
         goals_ys[i] = y
 
-    xMax = heatMap.shape[0]
-    yMax = heatMap.shape[1]
+    # Why does numpy put these in backwards?
+    xMax = heatMap.shape[1]
+    yMax = heatMap.shape[0]
 
     # I'm almost not sure that this isn't illegal.
     fail = cmap.burnHeatMap(xMax, yMax, heatMap, len(goals), goals_xs, goals_ys)
