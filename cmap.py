@@ -48,14 +48,55 @@ def getHeatMap(gridMap, goals):
     return heatMap
 
 
-def test():
+def timed_test(grid, goals):
     from time import time
-    empty_grid = numpy.ones((1024, 1024), dtype=numpy.int32) * 0
     t0 = time()
-    hm = getHeatMap(empty_grid, [(0,0)])
+    hm = getHeatMap(grid, goals)
     t1 = time()
+    print "test took: %fs" % (t1 - t0)
+    print "-" * 32
+    print "input grid:"
+    print "-" * 32
+    print grid
+    print "output heatmap:"
+    print "-" * 32
     print hm
-    print t1 - t0
+    print
+
+def test_wide_open():
+    grid = numpy.zeros((1024, 1024), dtype=numpy.int32)
+    timed_test(grid, [(0, 0)])
+
+def test_with_walls():
+    grid = numpy.zeros((1024, 1024), dtype=numpy.int32)
+    grid[:, 1] = -1
+    grid[1023, 1] = 0
+    grid[:, 1022] = -1
+    grid[0, 1022] = 0
+    timed_test(grid, [(0, 0)])
+
+def test_with_maze():
+    maze = [
+        "+++++ +",
+        "+  +  +",
+        "++ + ++",
+        "+  + + ",
+        "  ++   ",
+        " ++  + ",
+        "     ++",
+        "+ ++++ ",
+        " + ++++",
+    ]
+    grid = numpy.ndarray((len(maze[0]), len(maze)), dtype=numpy.int32)
+    for y, line in enumerate(maze):
+        for x, char in enumerate(line):
+            grid[x, y] = -1 * int(char == "+")
+    timed_test(grid, [(4, 1)])
 
 if __name__ == "__main__":
-    test()
+    print "wide open field:"
+    test_wide_open()
+    print "put some walls in:"
+    test_with_walls()
+    print "how about a maze?:"
+    test_with_maze()
