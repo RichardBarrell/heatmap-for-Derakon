@@ -1,3 +1,5 @@
+/* This file is (c) 2013 Richard Barrell <rchrd@brrll.co.uk>, see LICENSE.txt */
+/* (it's the ISC license, which is 2-clause BSD with simplified wording) */
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>

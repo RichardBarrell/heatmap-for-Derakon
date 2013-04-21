@@ -1,4 +1,5 @@
-# gcc _cmap.c -o _cmap.so -fPIC -shared -O2 -std=c99 -Wall -Werror && python cmap.py
+# This file is (c) 2013 Richard Barrell <rchrd@brrll.co.uk>, see LICENSE.txt
+# (it's the ISC license, which is 2-clause BSD with simplified wording)
 
 from ctypes import CDLL, c_uint32, c_int32, POINTER, ARRAY, c_int, c_size_t, pointer
 import numpy

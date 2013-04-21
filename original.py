@@ -1,3 +1,7 @@
+# This is a derivative of work of heatmap.py by Derakon.
+# Modified from:
+# 2013-04-20 23:23:03 <Derakon> Ultimately I'm trying to make this function faster: http://pastebin.com/PVYrhTxm
+
 # import statprof
 import numpy
 from time import time
