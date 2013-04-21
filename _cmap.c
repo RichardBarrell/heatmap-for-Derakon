@@ -118,8 +118,8 @@ int burnHeatMap(ii xMax, ii yMax,
 		for (ii x = 0; x < xMax; x++) {
 			if (IX(x, y) != 0) {
 				SETUSED(x, y);
-				IX(x, y) = -1;
 			}
+			IX(x, y) = -1;
 		}
 	}
 
