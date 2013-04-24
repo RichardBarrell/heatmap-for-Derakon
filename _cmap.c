@@ -53,11 +53,11 @@ static int queue_append(queue *q, pair p) {
 			q->tail = old_size + q->tail;
 		}
 	}
+	q->pairs[q->tail] = p;
+	q->tail++;
 	if (q->tail == q->size) {
 		q->tail = 0;
 	}
-	q->pairs[q->tail] = p;
-	q->tail++;
 	return 0;
 }
 
@@ -125,6 +125,9 @@ int burnHeatMap(ii xMax, ii yMax,
 
 	for (size_t i = 0; i < goals_length; i++) {
 		ii x = goals_xs[i], y = goals_ys[i];
+		if (GETUSED(x, y)) {
+			continue;
+		}
 		IX(x, y) = 0;
 		SETUSED(x, y);
 		pair xy = {x, y};

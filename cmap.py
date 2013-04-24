@@ -79,21 +79,21 @@ def test_with_walls():
 
 def test_with_maze():
     maze = [
-        "+++++ +",
-        "+  +  +",
-        "++ + ++",
-        "+  + + ",
-        "  ++   ",
-        " ++  + ",
-        "     ++",
-        "+ ++++ ",
-        " + ++++",
+        "+++++ + ",
+        "+  +   +",
+        "++ + ++ ",
+        "+  + +  ",
+        "  ++    ",
+        " ++  +  ",
+        "     ++ ",
+        "+ ++++  ",
+        " + ++++ ",
     ]
     grid = numpy.ndarray((len(maze[0]), len(maze)), dtype=numpy.int32)
     for y, line in enumerate(maze):
         for x, char in enumerate(line):
             grid[x, y] = -1 * int(char == "+")
-    timed_test(grid, [(4, 1)])
+    timed_test(grid, [(0, 0), (4, 1), (4, 1)])
 
 if __name__ == "__main__":
     print "wide open field:"
