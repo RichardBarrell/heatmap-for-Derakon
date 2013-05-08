@@ -15,7 +15,7 @@ typedef struct {
 	pair *pairs;
 	size_t size;
 	size_t head;
-	size_t tail;
+	size_t used;
 } queue;
 
 static int queue_init(queue *q)
@@ -26,7 +26,7 @@ static int queue_init(queue *q)
 	}
 	q->size = 1;
 	q->head = 0;
-	q->tail = 0;
+	q->used = 0;
 	return 0;
 }
 
@@ -35,35 +35,31 @@ static void queue_free(queue *q) {
 }
 
 static size_t queue_used(queue *q) {
-	size_t gap = q->tail - q->head;
-	if (q->head > q->tail) { gap += q->size; }
-	return gap;
+	return q->used;
 }
 
 static int queue_append(queue *q, pair p) {
-	if ((queue_used(q)+1) == q->size) {
+	if (q->used == q->size) {
 		size_t old_size = q->size;
 		q->size = q->size * 2;
 		q->pairs = realloc(q->pairs, q->size * sizeof(pair));
 		if (q->pairs == NULL) {
 			return -1;
 		}
-		if (q->tail < q->head) {
-			memcpy(q->pairs + old_size, q->pairs, q->tail * sizeof(pair));
-			q->tail = old_size + q->tail;
+		if (q->head > 0) {
+			memcpy(q->pairs + old_size, q->pairs, q->head * sizeof(pair));
 		}
 	}
-	q->pairs[q->tail] = p;
-	q->tail++;
-	if (q->tail == q->size) {
-		q->tail = 0;
-	}
+	size_t new_pos = (q->head + q->used) % q->size;
+	q->pairs[new_pos] = p;
+	q->used++;
 	return 0;
 }
 
 static pair queue_popleft(queue *q) {
 	size_t old_head = q->head;
-	q->head = q->head + 1;
+	q->head++;
+	q->used--;
 	if (q->head == q->size) {
 		q->head = 0;
 	}
