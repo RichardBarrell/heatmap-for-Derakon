@@ -93,23 +93,6 @@ static pair queue_popleft(queue *q) {
 	return q->pairs[old_head];
 }
 
-/* getbit and setbit implement a bit-array on top of an array of u8s. */
-static int getbit(u8 *u, ii x, ii y, ii xMax) {
-	ii pos = y*xMax + x;
-	ii pos_byte = pos >> 3;
-	ii pos_bit  = pos & 0x7;
-	int val = (u[pos_byte] >> pos_bit) & 0x1;
-	return val;
-}
-
-static void setbit(u8 *u, ii x, ii y, ii xMax) {
-	ii pos = y*xMax + x;
-	ii pos_byte = pos >> 3;
-	ii pos_bit  = pos & 0x7;
-	u8 bit = 1 << pos_bit;
-	u[pos_byte] = (u[pos_byte] & ~bit) | bit;
-}
-
 int burnHeatMap(ii xMax, ii yMax,
 		ii *heatMap,
 		size_t goals_length, ii *goals_xs, ii *goals_ys)
@@ -134,7 +117,13 @@ int burnHeatMap(ii xMax, ii yMax,
 		goto cleanup_none;
 	}
 
-	if (xMax > (INT32_MAX / yMax)) {
+	if (xMax == INT32_MAX) {
+		/* xMax+1 in the next line would overflow, so... */
+		failing = FAIL_LINE;
+		goto cleanup_none;
+	}
+
+	if ((xMax+1) > (INT32_MAX / yMax)) {
 		/* Can't actually index this many pixels without overflow. */
 		/* Won't bother to index with size_ts instead of int32_ts. */
 		failing = FAIL_LINE;
@@ -147,48 +136,25 @@ int burnHeatMap(ii xMax, ii yMax,
 		goto cleanup_none;
 	}
 
-	size_t used_sz = (xMax * yMax + 7) / 8;
-	u8 *used = calloc(used_sz, 1);
-
-	if (used == NULL) {
-		failing = FAIL_LINE;
-		goto cleanup_queue;
-	}
-
-/* GETUSED(x, y) returns 1 iff SETUSED(x, y) was previously called. */
-/* We're using a bitset to track which squares are either already visited */
-/* marked impassable in the source map. */
-#define GETUSED(x, y) getbit(used, (x), (y), xMax)
-#define SETUSED(x, y) setbit(used, (x), (y), xMax)
-
-	/* enqueue all the goals */
-	for (size_t i = 0; i < goals_length; i++) {
-		ii x = goals_xs[i], y = goals_ys[i];
-		if (GETUSED(x, y)) {
-			continue;
-		}
-		SETUSED(x, y);
-		pair xy = {x, y};
-		if (queue_append(&cell_todo, xy) != 0) {
-			failing = FAIL_LINE;
-			goto cleanup_queue_used;
-		}
-	}
-
 	/* set up the walls */
 	for (ii y = 0; y < yMax; y++) {
 		for (ii x = 0; x < xMax; x++) {
-			if (IX(x, y) != 0) {
-				SETUSED(x, y);
-			}
-			IX(x, y) = -1;
+			IX(x, y) = (IX(x, y) == 0) ? INT32_MAX : -1;
 		}
 	}
 
-	/* blow holes in any walls covering goals */
+	/* enqueue all the goals, blowing holes in any walls covering goals */
 	for (size_t i = 0; i < goals_length; i++) {
 		ii x = goals_xs[i], y = goals_ys[i];
+		if (IX(x, y) == 0) {
+			continue;
+		}
 		IX(x, y) = 0;
+		pair xy = {x, y};
+		if (queue_append(&cell_todo, xy) != 0) {
+			failing = FAIL_LINE;
+			goto cleanup_queue;
+		}
 	}
 
 #define MAX(a,b) ((a)>(b)?(a):(b))
@@ -197,19 +163,27 @@ int burnHeatMap(ii xMax, ii yMax,
 	while (queue_used(&cell_todo) > 0) {
 		pair xy = queue_popleft(&cell_todo);
 		ii x = xy.x, y = xy.y;
-		ii cost = IX(x, y);
+		ii cost = IX(x, y) + 1;
 		for (ii yi = MAX(0, y-1); yi < MIN(yMax, y+2); yi++) {
 			for (ii xi = MAX(0, x-1); xi < MIN(xMax, x+2); xi++) {
-				if (GETUSED(xi, yi)) {
+				if (IX(xi, yi) <= cost) {
 					continue;
 				}
-				SETUSED(xi, yi);
-				IX(xi, yi) = cost + 1;
+				IX(xi, yi) = cost;
 				pair xiyi = {xi, yi};
 				if (queue_append(&cell_todo, xiyi) != 0) {
 					failing = FAIL_LINE;
-					goto cleanup_queue_used;
+					goto cleanup_queue;
 				}
+			}
+		}
+	}
+
+	/* set unreached squares to -1 */
+	for (ii y = 0; y < yMax; y++) {
+		for (ii x = 0; x < xMax; x++) {
+			if (IX(x, y) == INT32_MAX) {
+				IX(x, y) = -1;
 			}
 		}
 	}
@@ -232,8 +206,6 @@ int burnHeatMap(ii xMax, ii yMax,
 	}
 #endif
 
- cleanup_queue_used:
-	free(used);
  cleanup_queue:
 	queue_free(&cell_todo);
  cleanup_none:

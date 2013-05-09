@@ -53,16 +53,19 @@ def getHeatMap(gridMap, goals):
     # Python will spill this into an arbitrary-precision integer,
     # where C would just overflow the int32_t. The same check is
     # replicated in the C code too, but this exception is friendlier!
-    # The limit of INT32_MAX squares comes from two places:
+    # The limit of INT32_MAX-1 squares comes from three places:
     #   1. the C code indexes squares using int32_ts. In theory that could
     #      use uint32_ts or size_ts instead, but there's little point because:
     #   2. the maximum cost that you can get on a grid is bounded by the
     #      number of squares on it; the restriction to at-most-INT32_MAX
     #      squares means that the costs will definitely fit into the int32_ts
     #      used in the ndarray.
+    #   3. the C code uses INT32_MAX to represent unvisited squares, but this
+    #      Python code expects squares that can't reach a goal to return -1
+    #      (that could be changed, would result in INT32_MAX being acceptable)
     # Oh and we don't use unsigned numbers in the costs array because we want
     # to have negative numbers to signal impassable & unreachable squares.
-    if (xMax * yMax) > 0x7fffffff:
+    if (xMax * yMax) >= 0x7fffffff:
         raise ValueError("grid has more than INT32_MAX squares. :(")
 
     # I'm almost not sure that this isn't illegal.
