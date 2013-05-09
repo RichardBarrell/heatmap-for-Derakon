@@ -117,15 +117,10 @@ int burnHeatMap(ii xMax, ii yMax,
 		goto cleanup_none;
 	}
 
-	if (xMax == INT32_MAX) {
-		/* xMax+1 in the next line would overflow, so... */
-		failing = FAIL_LINE;
-		goto cleanup_none;
-	}
-
-	if ((xMax+1) > (INT32_MAX / yMax)) {
-		/* Can't actually index this many pixels without overflow. */
+	if (xMax > ((INT32_MAX - 1) / yMax)) {
+		/* Can't index more than INT32_MAX pixels without overflow. */
 		/* Won't bother to index with size_ts instead of int32_ts. */
+		/* Also, use INT32_MAX as a sentinel for unvisited squares. */
 		failing = FAIL_LINE;
 		goto cleanup_none;
 	}
